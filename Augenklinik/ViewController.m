@@ -97,8 +97,8 @@
 	NSDate *startHour = [_wakeupTimePicker date],
 			*endHour  = [_sleepTimePicker date];
 	int secondsTotal = (int)([endHour timeIntervalSinceDate:startHour]);
-	int topffrequenz =[_tropfField.text intValue];
-	int secondsBetween = (int)(secondsTotal/topffrequenz);
+	int topffrequenz = [_tropfField.text intValue];
+	int secondsBetween = (int)(secondsTotal/(topffrequenz - 1));
 	NSCalendar *gregorianCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
 	NSDateComponents *startComponents = [gregorianCalendar components:NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond fromDate:startHour];
 	NSDateComponents *todayComponents = [gregorianCalendar components:NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate:[NSDate date]];
@@ -154,15 +154,14 @@
 	}
 }
 
-- (NSDateComponents *)_dateComponentsForDate:(NSDate *) aDate {
+- (NSDateComponents *)_dateComponentsForDate:(NSDate *) aDate seconds:(unsigned) secs{
 	NSDateComponents *oneDayComponents = [[NSDateComponents alloc] init];
 	oneDayComponents.day = 1;
 	
 	NSCalendar *gregorianCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
-	NSUInteger unitFlags = NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay;
-	NSDateComponents *components = [gregorianCalendar components:unitFlags fromDate:aDate];
-	components.second = 0;
-	//- (nullable NSDate *)dateFromComponents:(NSDateComponents *)comps;
+	NSDateComponents *components = [gregorianCalendar components:NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond
+														fromDate:aDate];
+	components.second = secs;
 
 	return components;
 }
@@ -174,7 +173,9 @@
 	EKReminder *reminder = [EKReminder reminderWithEventStore:self.eventStore];
 	reminder.title = item;
 	reminder.calendar = self.calendar;
-	reminder.dueDateComponents = [self _dateComponentsForDate:aDate];
+	reminder.startDateComponents = [self _dateComponentsForDate:aDate seconds:0];
+	reminder.dueDateComponents = [self _dateComponentsForDate:aDate seconds:50];
+	[reminder addAlarm:[EKAlarm alarmWithAbsoluteDate:aDate]];
 	
 	NSError *error = nil;
 	BOOL success = [self.eventStore saveReminder:reminder commit:YES error:&error];
