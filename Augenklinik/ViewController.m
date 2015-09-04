@@ -5,6 +5,9 @@
 //  Created by Daniel Böhringer on 23.08.15.
 //  Copyright © 2015 Daniel Böhringer. All rights reserved.
 //
+// TODO:
+//   "tab"-navigation: barcode : add manual : remove overdues
+//   autoremove overdue reminders
 
 #import "ViewController.h"
 
@@ -77,6 +80,25 @@
 	[super didReceiveMemoryWarning];
 	// Dispose of any resources that can be recreated.
 }
+-(unsigned)_secondsBetweenDate:(NSDate *)startHour andDate:(NSDate *)endHour withFrequency:(unsigned)topffrequenz
+{
+	NSCalendar *gregorianCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
+	NSDateComponents *startComponents = [gregorianCalendar components:NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond fromDate:startHour];
+	NSDateComponents *endComponents = [gregorianCalendar components:NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond fromDate:endHour];
+	NSDateComponents *todayComponents = [gregorianCalendar components:NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate:[NSDate date]];
+	todayComponents.hour = startComponents.hour;
+	todayComponents.minute = startComponents.minute;
+	todayComponents.second = startComponents.second;
+	NSDate *startDate = [gregorianCalendar dateFromComponents:todayComponents];
+	todayComponents.hour = endComponents.hour;
+	todayComponents.minute = endComponents.minute;
+	todayComponents.second = endComponents.second;
+	NSDate *endDate = [gregorianCalendar dateFromComponents:todayComponents];
+
+	if(topffrequenz < 2) return 0;
+	int secondsTotal = (int)([endDate timeIntervalSinceDate:startDate]);
+	return (unsigned)(secondsTotal/(topffrequenz - 1));
+}
 
 -(BOOL)_addRemindersAtFrequency:(unsigned) topffrequenz secondsBetween:(unsigned)secondsBetween startingHours:(NSDate *)startHour identifier:(NSString *) myIdentifier
 {
@@ -91,14 +113,60 @@
 	return success;
 }
 
+#define SECONDS_PER_DAY (60*60*24)
 
--(IBAction)didPressButton:(id)sender
+-(BOOL)_addRemindersAtFrequency:(unsigned) topffrequenz secondsBetween:(unsigned)secondsBetween startDay:(NSDate *)startDay endDay:(NSDate *)endDay identifier:(NSString *) myIdentifier
+{
+	unsigned daysBetween= (unsigned)([endDay timeIntervalSinceDate:startDay]/SECONDS_PER_DAY);
+	BOOL success = YES;
+	for (int i = 0; i < daysBetween; i++) {
+		NSDate *date = [startDay dateByAddingTimeInterval: SECONDS_PER_DAY * i];
+		if (![self _addRemindersAtFrequency:topffrequenz secondsBetween:secondsBetween startingHours:date identifier:myIdentifier]) {
+			success = FALSE;
+			break;
+		}
+	}
+	return success;
+}
+
+//FIXME: make this run in the background
+-(BOOL)addRemindersForSchemaName:(NSString *)schemaName eyePrefix:(NSString *)eyePrefix startHour:(NSDate *)startDate endHours:(NSDate *) endHour
+{
+	NSDictionary *dn=@{ @"KAT0": @[@{@"id": @"Inflanefran forte AT", @"taper": @[			   @{@"fq":@5, @"d":@7 },
+																							   @{@"fq":@4, @"d":@7 },
+																							   @{@"fq":@3, @"d":@7 },
+																							   @{@"fq":@2, @"d":@7 },
+																							   @{@"fq":@1, @"d":@7 }
+																							 ]}
+											   ]
+					  };
+
+	BOOL success = YES;
+	NSArray *schemaArr = [dn objectForKey:schemaName];
+	// fixme: raise if schemaArr does not exists
+	
+	for (NSDictionary *medSeq in schemaArr) {
+		NSString *myIdentifier = [medSeq objectForKey:@"id"];
+		NSArray  *taperArray = [medSeq objectForKey:@"taper"];
+		for (NSDictionary *taperStep in taperArray) {
+			unsigned topffrequenz = (unsigned)[[taperStep objectForKey:@"fq"] integerValue],
+					 days = (unsigned)[[taperStep objectForKey:@"d"] integerValue];
+			NSDate *endDate = [startDate dateByAddingTimeInterval:SECONDS_PER_DAY * days];
+			int secondsBetween = [self _secondsBetweenDate:startDate andDate:endHour withFrequency:topffrequenz];
+			if (![self _addRemindersAtFrequency:topffrequenz secondsBetween:secondsBetween startDay:startDate endDay:endDate identifier:
+				  [NSString stringWithFormat:@"%@: %@",eyePrefix, myIdentifier]]) {
+				return FALSE;
+			}
+			startDate = endDate;
+		}
+	}
+
+	return success;
+}
+-(BOOL)parseScannedString:(NSString *)aString
 {
 	NSDate *startHour = [_wakeupTimePicker date],
 			*endHour  = [_sleepTimePicker date];
-	int secondsTotal = (int)([endHour timeIntervalSinceDate:startHour]);
-	int topffrequenz = [_tropfField.text intValue];
-	int secondsBetween = (int)(secondsTotal/(topffrequenz - 1));
 	NSCalendar *gregorianCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
 	NSDateComponents *startComponents = [gregorianCalendar components:NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond fromDate:startHour];
 	NSDateComponents *todayComponents = [gregorianCalendar components:NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate:[NSDate date]];
@@ -107,8 +175,49 @@
 	todayComponents.second = startComponents.second;
 	NSDate *startDate = [gregorianCalendar dateFromComponents:todayComponents];
 
+	NSCharacterSet  *eyeSet  = [NSCharacterSet characterSetWithCharactersInString:@"RLA"],
+					*alnumSet = [NSCharacterSet alphanumericCharacterSet],
+				    *dateSet = [NSCharacterSet characterSetWithCharactersInString:@"0123456789-"];
+	NSScanner *theScanner = [NSScanner scannerWithString:aString];
+	theScanner.charactersToBeSkipped = [NSCharacterSet characterSetWithCharactersInString:@","];
+	NSString  *eyeString, *medString, *terminString;
+	
+	while ([theScanner isAtEnd] == NO) {
+		
+		[theScanner scanCharactersFromSet:eyeSet
+							   intoString:&eyeString];
+		[theScanner scanCharactersFromSet:alnumSet
+							   intoString:&medString];
+		[theScanner scanCharactersFromSet:dateSet
+							   intoString:&terminString];
+		// FIXME: raise unless eyeString
+		[self addRemindersForSchemaName:medString eyePrefix:eyeString startHour:startDate endHours:endHour];
+	}
+	return YES;
+}
 
-	BOOL success = [self _addRemindersAtFrequency:topffrequenz secondsBetween:secondsBetween startingHours:startDate identifier:@"RA: Inflanefran forte"];
+
+-(IBAction)didPressButton:(id)sender
+{
+	NSDate *startHour = [_wakeupTimePicker date],
+			*endHour  = [_sleepTimePicker date];
+	NSCalendar *gregorianCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
+	NSDateComponents *startComponents = [gregorianCalendar components:NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond fromDate:startHour];
+	NSDateComponents *todayComponents = [gregorianCalendar components:NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate:[NSDate date]];
+	todayComponents.hour = startComponents.hour;
+	todayComponents.minute = startComponents.minute;
+	todayComponents.second = startComponents.second;
+	NSDate *startDate = [gregorianCalendar dateFromComponents:todayComponents];
+
+#if 1
+	BOOL success = [self parseScannedString:@"RA,KAT0,2015-08-23"];
+//	BOOL success = [self addRemindersForSchemaName:@"KAT0" eyePrefix:@"RA" startHour:startDate endHours:endHour];
+#else
+	NSDate *endDate = [startDate dateByAddingTimeInterval:3*SECONDS_PER_DAY];
+	int topffrequenz = [_tropfField.text intValue];
+	int secondsBetween = [self _secondsBetweenDate:startHour andDate:endHour withFrequency:topffrequenz];
+	BOOL success = [self _addRemindersAtFrequency:topffrequenz secondsBetween:secondsBetween startDay:startDate endDay:endDate identifier:@"RA: Inflanefran forte"];
+#endif
 	NSString *message = (success) ? @"All reminders have been added!" : @"Failed to add reminders!";
 	UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:nil message:message delegate:nil cancelButtonTitle:nil otherButtonTitles:@"OK", nil];
 	[alertView show];
@@ -170,6 +279,9 @@
 	if (!self.isAccessToEventStoreGranted)
 		return NO;
 	
+	if ([aDate compare:[NSDate date]] == NSOrderedAscending) { // do not add overdue events in the first place
+		return YES;
+	}
 	EKReminder *reminder = [EKReminder reminderWithEventStore:self.eventStore];
 	reminder.title = item;
 	reminder.calendar = self.calendar;
