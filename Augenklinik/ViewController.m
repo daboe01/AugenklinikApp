@@ -6,10 +6,10 @@
 //  Copyright © 2015 Daniel Böhringer. All rights reserved.
 //
 // TODO:
-//   "tab"-navigation: barcode : add manual : remove overdues
-//   autoremove overdue reminders
+//   <!> nachsorgetermin eintragen
 
 #import "ViewController.h"
+#import <AVFoundation/AVFoundation.h>
 
 @import EventKit;
 
@@ -27,8 +27,15 @@
 
 @property (weak, nonatomic) IBOutlet UIDatePicker *wakeupTimePicker;
 @property (weak, nonatomic) IBOutlet UIDatePicker *sleepTimePicker;
-@property (weak, nonatomic) IBOutlet UISlider *tropfSlider;
-@property (weak, nonatomic) IBOutlet UITextField *tropfField;
+@property (weak, nonatomic) IBOutlet UIView *scanView;
+@property (weak, nonatomic) IBOutlet UIActivityIndicatorView *spinner;
+@property (strong, nonatomic)  UIView *highlightView;
+@property (strong, nonatomic) AVCaptureSession *session;
+@property (strong, nonatomic) AVCaptureDevice *device;
+@property (strong, nonatomic) AVCaptureDeviceInput *input;
+@property (strong, nonatomic) AVCaptureMetadataOutput *output;
+@property (strong, nonatomic) AVCaptureVideoPreviewLayer *captureLayer;
+
 
 @end
 
@@ -38,8 +45,40 @@
 
 - (void)viewDidLoad {
 	[super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
 	[self updateAuthorizationStatusToAccessEventStore];
+	
+	_highlightView = [[UIView alloc] init];
+	_highlightView.autoresizingMask = UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin|UIViewAutoresizingFlexibleBottomMargin;
+	_highlightView.layer.borderColor = [UIColor greenColor].CGColor;
+	_highlightView.layer.borderWidth = 3;
+	[self.scanView addSubview:_highlightView];
+
+	_session = [[AVCaptureSession alloc] init];
+	_device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+	NSError *error = nil;
+	
+	_input = [AVCaptureDeviceInput deviceInputWithDevice:_device error:&error];
+	if (_input) {
+		[_session addInput:_input];
+	} else {
+		NSLog(@"Error: %@", error);
+	}
+	
+	_output = [[AVCaptureMetadataOutput alloc] init];
+	[_output setMetadataObjectsDelegate:self queue:dispatch_get_main_queue()];
+	[_session addOutput:_output];
+	
+	_output.metadataObjectTypes = [_output availableMetadataObjectTypes];
+	
+	_captureLayer = [AVCaptureVideoPreviewLayer layerWithSession:_session];
+	_captureLayer.frame = self.view.bounds;
+	_captureLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+	[self.scanView.layer addSublayer:_captureLayer];
+	
+	[_session startRunning];
+	
+	[self.scanView bringSubviewToFront:_highlightView];
+
 }
 
 - (EKEventStore *)eventStore {
@@ -95,7 +134,7 @@
 	todayComponents.second = endComponents.second;
 	NSDate *endDate = [gregorianCalendar dateFromComponents:todayComponents];
 
-	if(topffrequenz < 2) return 0;
+	if (topffrequenz < 2) return 0;
 	int secondsTotal = (int)([endDate timeIntervalSinceDate:startDate]);
 	return (unsigned)(secondsTotal/(topffrequenz - 1));
 }
@@ -141,7 +180,6 @@
 											   ]
 					  };
 
-	BOOL success = YES;
 	NSArray *schemaArr = [dn objectForKey:schemaName];
 	// fixme: raise if schemaArr does not exists
 	
@@ -160,10 +198,9 @@
 			startDate = endDate;
 		}
 	}
-
-	return success;
+	return YES;
 }
--(BOOL)parseScannedString:(NSString *)aString
+-(void)parseScannedString:(NSString *)aString
 {
 	NSDate *startHour = [_wakeupTimePicker date],
 			*endHour  = [_sleepTimePicker date];
@@ -180,55 +217,72 @@
 				    *dateSet = [NSCharacterSet characterSetWithCharactersInString:@"0123456789-"];
 	NSScanner *theScanner = [NSScanner scannerWithString:aString];
 	theScanner.charactersToBeSkipped = [NSCharacterSet characterSetWithCharactersInString:@","];
-	NSString  *eyeString, *medString, *terminString;
+
+	[_spinner startAnimating];
 	
-	while ([theScanner isAtEnd] == NO) {
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+		NSString  *eyeString, *medString, *terminString;
+
+		while ([theScanner isAtEnd] == NO) {
+			
+			[theScanner scanCharactersFromSet:eyeSet
+								   intoString:&eyeString];
+			[theScanner scanCharactersFromSet:alnumSet
+								   intoString:&medString];
+			[theScanner scanCharactersFromSet:dateSet
+								   intoString:&terminString];
+			// FIXME: raise unless eyeString
+			[self addRemindersForSchemaName:medString eyePrefix:eyeString startHour:startDate endHours:endHour];
+		}
 		
-		[theScanner scanCharactersFromSet:eyeSet
-							   intoString:&eyeString];
-		[theScanner scanCharactersFromSet:alnumSet
-							   intoString:&medString];
-		[theScanner scanCharactersFromSet:dateSet
-							   intoString:&terminString];
-		// FIXME: raise unless eyeString
-		[self addRemindersForSchemaName:medString eyePrefix:eyeString startHour:startDate endHours:endHour];
-	}
-	return YES;
+		dispatch_async(dispatch_get_main_queue(), ^(void) {
+			
+			[_spinner stopAnimating];
+			NSString *message = @"Alle Erinnerungen eingetragen!";
+			UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:nil
+																message:message
+															   delegate:self
+													  cancelButtonTitle:nil
+													  otherButtonTitles:@"Fertig", nil];
+			[alertView show];
+		});
+	});
+	return;
 }
-
-
--(IBAction)didPressButton:(id)sender
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
-	NSDate *startHour = [_wakeupTimePicker date],
-			*endHour  = [_sleepTimePicker date];
-	NSCalendar *gregorianCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
-	NSDateComponents *startComponents = [gregorianCalendar components:NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond fromDate:startHour];
-	NSDateComponents *todayComponents = [gregorianCalendar components:NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate:[NSDate date]];
-	todayComponents.hour = startComponents.hour;
-	todayComponents.minute = startComponents.minute;
-	todayComponents.second = startComponents.second;
-	NSDate *startDate = [gregorianCalendar dateFromComponents:todayComponents];
-
-#if 1
-	BOOL success = [self parseScannedString:@"RA,KAT0,2015-08-23"];
-//	BOOL success = [self addRemindersForSchemaName:@"KAT0" eyePrefix:@"RA" startHour:startDate endHours:endHour];
-#else
-	NSDate *endDate = [startDate dateByAddingTimeInterval:3*SECONDS_PER_DAY];
-	int topffrequenz = [_tropfField.text intValue];
-	int secondsBetween = [self _secondsBetweenDate:startHour andDate:endHour withFrequency:topffrequenz];
-	BOOL success = [self _addRemindersAtFrequency:topffrequenz secondsBetween:secondsBetween startDay:startDate endDay:endDate identifier:@"RA: Inflanefran forte"];
-#endif
-	NSString *message = (success) ? @"All reminders have been added!" : @"Failed to add reminders!";
-	UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:nil message:message delegate:nil cancelButtonTitle:nil otherButtonTitles:@"OK", nil];
-	[alertView show];
+	exit(0);
 }
-
--(IBAction)didChangeSlider:(UISlider*)sender
+- (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputMetadataObjects:(NSArray *)metadataObjects fromConnection:(AVCaptureConnection *)connection
 {
-	int val=(int)[sender value];
-	_tropfField.text=[NSString stringWithFormat:@"%d", val];
+	AVMetadataMachineReadableCodeObject *barCodeObject;
+	NSString *detectionString = nil;
+	NSArray *barCodeTypes = @[AVMetadataObjectTypeUPCECode, AVMetadataObjectTypeCode39Code, AVMetadataObjectTypeCode39Mod43Code,
+							  AVMetadataObjectTypeEAN13Code, AVMetadataObjectTypeEAN8Code, AVMetadataObjectTypeCode93Code, AVMetadataObjectTypeCode128Code,
+							  AVMetadataObjectTypePDF417Code, AVMetadataObjectTypeQRCode, AVMetadataObjectTypeAztecCode];
 	
+	for (AVMetadataObject *metadata in metadataObjects) {
+		for (NSString *type in barCodeTypes) {
+			if ([metadata.type isEqualToString:type])
+			{
+				barCodeObject = (AVMetadataMachineReadableCodeObject *)[_captureLayer transformedMetadataObjectForMetadataObject:(AVMetadataMachineReadableCodeObject *)metadata];
+				_highlightView.frame = barCodeObject.bounds;
+				detectionString = [(AVMetadataMachineReadableCodeObject *)metadata stringValue];
+				break;
+			}
+		}
+		
+		if (detectionString != nil)
+		{
+			NSLog(@"detectionString: %@", detectionString);
+			[_session stopRunning];
+
+			[self performSelectorOnMainThread:@selector(parseScannedString:) withObject:detectionString waitUntilDone:NO];
+			break;
+		}
+	}
 }
+
 
 - (void)updateAuthorizationStatusToAccessEventStore {
 	EKAuthorizationStatus authorizationStatus = [EKEventStore authorizationStatusForEntityType:EKEntityTypeReminder];
@@ -297,6 +351,7 @@
 	return YES;
 }
 
+#if 0
 - (void)fetchReminders {
 	if (self.isAccessToEventStoreGranted) {
 
@@ -329,6 +384,6 @@
 		}
 	}
 }
-
+#endif
 
 @end

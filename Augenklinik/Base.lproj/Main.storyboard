@@ -17,55 +17,50 @@
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="J3a-4K-Zqg">
-                                <rect key="frame" x="6" y="317" width="155" height="30"/>
-                                <state key="normal" title="Tropfzeiten berechnen"/>
-                                <connections>
-                                    <action selector="didPressButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="P8Z-7J-oed"/>
-                                </connections>
-                            </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Aufstehzeit" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="oVU-CH-bCY">
-                                <rect key="frame" x="6" y="64" width="87" height="21"/>
+                                <rect key="frame" x="34" y="28" width="87" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Zubettgehzeit" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pad-3S-otJ">
-                                <rect key="frame" x="169" y="66" width="108" height="21"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Scan Barcode here" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="MVP-ZN-Vlq">
+                                <rect key="frame" x="6" y="206" width="158" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <datePicker contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="time" minuteInterval="1" useCurrentDate="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dUH-W3-xR2">
-                                <rect key="frame" x="6" y="87" width="155" height="216"/>
-                                <date key="date" timeIntervalSinceReferenceDate="462384363.41089499">
-                                    <!--2015-08-27 16:06:03 +0000-->
+                                <rect key="frame" x="0.0" y="43" width="155" height="140"/>
+                                <date key="date" timeIntervalSinceReferenceDate="462344400.41089499">
+                                    <!--2015-08-27 05:00:00 +0000-->
                                 </date>
                             </datePicker>
-                            <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="1" maxValue="7" translatesAutoresizingMaskIntoConstraints="NO" id="I4X-MR-POK">
-                                <rect key="frame" x="4" y="20" width="118" height="31"/>
-                                <connections>
-                                    <action selector="didChangeSlider:" destination="BYZ-38-t0r" eventType="valueChanged" id="lLz-Ex-6fE"/>
-                                </connections>
-                            </slider>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="yEp-tU-6pr">
-                                <rect key="frame" x="128" y="20" width="97" height="30"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                            <datePicker contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="time" minuteInterval="1" translatesAutoresizingMaskIntoConstraints="NO" id="q7e-gC-HzA">
-                                <rect key="frame" x="169" y="87" width="155" height="216"/>
-                                <date key="date" timeIntervalSinceReferenceDate="462384363.41089499">
-                                    <!--2015-08-27 16:06:03 +0000-->
+                            <datePicker contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="time" minuteInterval="1" useCurrentDate="NO" translatesAutoresizingMaskIntoConstraints="NO" id="q7e-gC-HzA">
+                                <rect key="frame" x="163" y="43" width="155" height="140"/>
+                                <date key="date" timeIntervalSinceReferenceDate="462398400.41089499">
+                                    <!--2015-08-27 20:00:00 +0000-->
                                 </date>
                             </datePicker>
+                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AYo-v7-3wk">
+                                <rect key="frame" x="0.0" y="235" width="318" height="204"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                            </view>
+                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="M36-8u-XtB">
+                                <rect key="frame" x="172" y="207" width="20" height="20"/>
+                            </activityIndicatorView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Zubettgehzeit" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pad-3S-otJ">
+                                <rect key="frame" x="186" y="28" width="108" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <connections>
+                        <outlet property="scanView" destination="AYo-v7-3wk" id="KMt-h7-28C"/>
                         <outlet property="sleepTimePicker" destination="q7e-gC-HzA" id="npk-AM-TJU"/>
-                        <outlet property="tropfField" destination="yEp-tU-6pr" id="Tsy-BC-mCY"/>
-                        <outlet property="tropfSlider" destination="I4X-MR-POK" id="7sg-oE-huY"/>
+                        <outlet property="spinner" destination="M36-8u-XtB" id="BUH-Is-ilZ"/>
                         <outlet property="wakeupTimePicker" destination="dUH-W3-xR2" id="cGS-mi-lDY"/>
                     </connections>
                 </viewController>
