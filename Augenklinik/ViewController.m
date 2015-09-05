@@ -24,8 +24,6 @@
 
 @property (strong, nonatomic) EKCalendar *calendar;
 
-@property (copy, nonatomic) NSArray *reminders;
-
 @property (weak, nonatomic) IBOutlet UIDatePicker *wakeupTimePicker;
 @property (weak, nonatomic) IBOutlet UIDatePicker *sleepTimePicker;
 @property (weak, nonatomic) IBOutlet UIView *scanView;
@@ -77,10 +75,15 @@
 	_captureLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
 	[self.scanView.layer addSublayer:_captureLayer];
 	
-	[_session startRunning];
 	
 	[self.scanView bringSubviewToFront:_highlightView];
 
+}
+-(IBAction) startScanning:(id) sender;
+{	[_session startRunning];
+}
+-(IBAction) stopScanning:(id) sender;
+{	[_session stopRunning];
 }
 
 - (EKEventStore *)eventStore {
@@ -223,6 +226,9 @@
 	[_spinner startAnimating];
 	
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+		
+		[self deleteReminders];
+		
 		NSString  *eyeString, *medString, *terminString;
 
 		while ([theScanner isAtEnd] == NO) {
@@ -348,39 +354,22 @@
 	return YES;
 }
 
-#if 0
-- (void)fetchReminders {
+- (void)deleteReminders {
 	if (self.isAccessToEventStoreGranted) {
 
 		NSPredicate *predicate =
 		[self.eventStore predicateForRemindersInCalendars:@[self.calendar]];
 		
 		[self.eventStore fetchRemindersMatchingPredicate:predicate completion:^(NSArray *reminders) {
-			self.reminders = reminders;
+			[reminders enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+				NSError *error = nil;
+				BOOL success = [self.eventStore removeReminder:obj commit:NO error:&error];
+				if (!success) {
+					// Handle delete error
+				}
+			}];
 		}];
 	}
 }
-
-- (void)deleteReminderForToDoItem:(NSString *)item {
-	NSPredicate *predicate = [NSPredicate predicateWithFormat:@"title matches %@", item];
-	NSArray *results = [self.reminders filteredArrayUsingPredicate:predicate];
-	
-	if ([results count]) {
-		[results enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-			NSError *error = nil;
-			BOOL success = [self.eventStore removeReminder:obj commit:NO error:&error];
-			if (!success) {
-				// Handle delete error
-			}
-		}];
-		
-		NSError *commitErr = nil;
-		BOOL success = [self.eventStore commit:&commitErr];
-		if (!success) {
-			// Handle commit error.
-		}
-	}
-}
-#endif
 
 @end
