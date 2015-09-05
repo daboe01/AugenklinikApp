@@ -6,7 +6,8 @@
 //  Copyright © 2015 Daniel Böhringer. All rights reserved.
 //
 // TODO:
-//   <!> nachsorgetermin eintragen
+//   <!> nachsorgetermin auch noch eintragen
+//   scannen erst nach aufforderung in extra-bildschirm
 
 #import "ViewController.h"
 #import <AVFoundation/AVFoundation.h>
@@ -29,7 +30,8 @@
 @property (weak, nonatomic) IBOutlet UIDatePicker *sleepTimePicker;
 @property (weak, nonatomic) IBOutlet UIView *scanView;
 @property (weak, nonatomic) IBOutlet UIActivityIndicatorView *spinner;
-@property (strong, nonatomic)  UIView *highlightView;
+
+@property (strong, nonatomic) UIView *highlightView;
 @property (strong, nonatomic) AVCaptureSession *session;
 @property (strong, nonatomic) AVCaptureDevice *device;
 @property (strong, nonatomic) AVCaptureDeviceInput *input;
@@ -288,7 +290,6 @@
 	EKAuthorizationStatus authorizationStatus = [EKEventStore authorizationStatusForEntityType:EKEntityTypeReminder];
 	
 	switch (authorizationStatus) {
-			// 3
 		case EKAuthorizationStatusDenied:
 		case EKAuthorizationStatusRestricted: {
 			self.isAccessToEventStoreGranted = NO;
@@ -298,13 +299,9 @@
 			[alertView show];
 			break;
 		}
-			
-			// 4
 		case EKAuthorizationStatusAuthorized:
 			self.isAccessToEventStoreGranted = YES;
 			break;
-			
-			// 5
 		case EKAuthorizationStatusNotDetermined: {
 			[self.eventStore requestAccessToEntityType:EKEntityTypeReminder
 											completion:^(BOOL granted, NSError *error) {
