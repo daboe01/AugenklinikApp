@@ -7,7 +7,7 @@
 //
 // TODO:
 //   <!> nachsorgetermin auch noch eintragen
-//   scannen erst nach aufforderung in extra-bildschirm
+//   nothing more to declare
 
 #import "ViewController.h"
 #import <AVFoundation/AVFoundation.h>
@@ -28,6 +28,8 @@
 @property (weak, nonatomic) IBOutlet UIDatePicker *sleepTimePicker;
 @property (weak, nonatomic) IBOutlet UIView *scanView;
 @property (weak, nonatomic) IBOutlet UIActivityIndicatorView *spinner;
+@property (weak, nonatomic) IBOutlet UILabel *activityLabel;
+@property (weak, nonatomic) IBOutlet UIImageView *logoView;
 
 @property (strong, nonatomic) UIView *highlightView;
 @property (strong, nonatomic) AVCaptureSession *session;
@@ -80,10 +82,12 @@
 
 }
 -(IBAction) startScanning:(id) sender;
-{	[_session startRunning];
-}
--(IBAction) stopScanning:(id) sender;
-{	[_session stopRunning];
+{	if([_session isRunning])
+		[_session stopRunning];
+	else
+	{	[_logoView removeFromSuperview];
+		[_session startRunning];
+	}
 }
 
 - (EKEventStore *)eventStore {
@@ -224,6 +228,8 @@
 	theScanner.charactersToBeSkipped = [NSCharacterSet characterSetWithCharactersInString:@","];
 
 	[_spinner startAnimating];
+	_activityLabel.text = @"Generating reminders...";
+	[_activityLabel sizeToFit];
 	
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 		
@@ -245,6 +251,7 @@
 		
 		dispatch_async(dispatch_get_main_queue(), ^(void) {
 			
+			_activityLabel.text = @" ";
 			[_spinner stopAnimating];
 			NSString *message = @"Alle Erinnerungen eingetragen!";
 			UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:nil

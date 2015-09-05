@@ -37,11 +37,16 @@
                             </datePicker>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AYo-v7-3wk">
                                 <rect key="frame" x="0.0" y="235" width="600" height="365"/>
+                                <subviews>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="logo" translatesAutoresizingMaskIntoConstraints="NO" id="QdV-b1-GwN">
+                                        <rect key="frame" x="0.0" y="22" width="316" height="247"/>
+                                    </imageView>
+                                </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <edgeInsets key="layoutMargins" top="8" left="8" bottom="8" right="8"/>
                             </view>
                             <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="M36-8u-XtB">
-                                <rect key="frame" x="172" y="207" width="20" height="20"/>
+                                <rect key="frame" x="118" y="213" width="20" height="20"/>
                             </activityIndicatorView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Zubettgehzeit" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pad-3S-otJ">
                                 <rect key="frame" x="186" y="28" width="108" height="21"/>
@@ -50,16 +55,24 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="c7n-NZ-hAa">
-                                <rect key="frame" x="0.0" y="202" width="121" height="30"/>
-                                <state key="normal" title="Scan barcode"/>
+                                <rect key="frame" x="0.0" y="208" width="121" height="30"/>
+                                <state key="normal" title="Scan QR-Code"/>
                                 <connections>
                                     <action selector="startScanning:" destination="BYZ-38-t0r" eventType="touchUpInside" id="1Fd-Dv-WbX"/>
                                 </connections>
                             </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text=" " lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vRc-da-mpV">
+                                <rect key="frame" x="146" y="212" width="170" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <connections>
+                        <outlet property="activityLabel" destination="vRc-da-mpV" id="QBT-L9-cP5"/>
+                        <outlet property="logoView" destination="QdV-b1-GwN" id="0qT-E9-kOk"/>
                         <outlet property="scanView" destination="AYo-v7-3wk" id="KMt-h7-28C"/>
                         <outlet property="sleepTimePicker" destination="q7e-gC-HzA" id="npk-AM-TJU"/>
                         <outlet property="spinner" destination="M36-8u-XtB" id="BUH-Is-ilZ"/>
@@ -71,4 +84,7 @@
             <point key="canvasLocation" x="163" y="287"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="logo" width="632" height="519"/>
+    </resources>
 </document>
