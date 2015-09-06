@@ -6,15 +6,18 @@
 //  Copyright © 2015 Daniel Böhringer. All rights reserved.
 //
 // TODO:
-//   <!> nachsorgetermin auch noch eintragen
-//   nothing more to declare
+//   versioning of barcode vs. app
+//   check syntax of scanned barcode
+//   erklaerenden text auf die startseite
+//   webservice zum erzeugen der barcodes
+//   ggf. nachsorgetermin auch noch eintragen
 
 #import "ViewController.h"
 #import <AVFoundation/AVFoundation.h>
 
 @import EventKit;
 
-@interface ViewController ()
+@interface ViewController () <AVCaptureMetadataOutputObjectsDelegate>
 
 // The database with calendar events and reminders
 @property (strong, nonatomic) EKEventStore *eventStore;
@@ -228,7 +231,7 @@
 	theScanner.charactersToBeSkipped = [NSCharacterSet characterSetWithCharactersInString:@","];
 
 	[_spinner startAnimating];
-	_activityLabel.text = @"Generating reminders...";
+	_activityLabel.text = @"Erzeuge...";
 	[_activityLabel sizeToFit];
 	
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{

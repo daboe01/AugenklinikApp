@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface ViewController<AVCaptureMetadataOutputObjectsDelegate> : UIViewController  
+@interface ViewController : UIViewController
 
 
 @end
